@@ -5,7 +5,7 @@
   "background_color": "#ffffff",
   "display": "standalone",
   "scope": "./",
-  "start_url": "/",
+  "start_url": "/mview/cp",
   "categories": [
     "Entertainment",
     "IPTV Video streaming"
@@ -61,6 +61,6 @@
     }
   ],
   "url": "https://mischievous-loner.github.io/mview/cp/",
-  "manifestUrl": "https://https://mischievous-loner.github.io/mview/cp/manifest.json",
+  "manifestUrl": "https://mischievous-loner.github.io/mview/cp/manifest.json",
   "lang": "en-in"
 }
