@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPTV Player</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <input type="text" id="playlist-url" placeholder="Enter M3U/M3U8 playlist URL">
+            <input type="file" id="playlist-file" accept=".m3u, .m3u8">
+            <button id="load-playlist">Load Playlist</button>
+        </header>
+        <div class="filters">
+            <input type="text" id="search-channels" placeholder="Search channels here">
+            <select id="category-filter">
+                <option value="all">All Categories</option>
+            </select>
+            <select id="language-filter">
+                <option value="all">All Languages</option>
+            </select>
+            <button id="apply-filters">Apply</button>
+        </div>
+        <div class="channel-list" id="channel-list"></div>
+    </div>
+    <div id="video-player-container" class="hidden">
+        <button id="close-player">X</button>
+      <button id="copy-url-btn" class="copy-btn">Copy URL</button>
+        <div id="player"></div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
+
+    <script src="script.js"></script>
+</body>
+</html>
