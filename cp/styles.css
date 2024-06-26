@@ -39,9 +39,10 @@ button:hover {
 
 .filters {
     display: flex;
-    align-items: center;
+    align-items: left;
     gap: 10px;
     margin-bottom: 20px;
+    flex-direction: column;
 }
 
 .channel-list {
