@@ -4,6 +4,8 @@ document.getElementById('apply-filters').addEventListener('click', applyFilters)
 
 let channels = [];
 let player = null;
+let iframePlayer = null;
+let iframeCloseButton = null;
 
 function loadPlaylist() {
     const urlInput = document.getElementById('playlist-url').value;
@@ -120,6 +122,11 @@ function playChannel(url) {
         player.destroy();
     }
 
+    if (iframePlayer) {
+        iframePlayer.remove();
+        iframePlayer = null;
+    }
+
     playerContainer.classList.remove('hidden');
 
     player = new Clappr.Player({
@@ -130,9 +137,64 @@ function playChannel(url) {
         autoPlay: true
     });
 
+    player.on(Clappr.Events.PLAYER_ERROR, () => {
+        // Clappr couldn't play the video, open it in an iframe
+        openInIframe(url);
+    });
+
+    player.on(Clappr.Events.PLAYER_PLAY, () => {
+        // Hide the iframe when the player starts playing
+        hideIframe();
+    });
+
     copyUrlBtn.addEventListener('click', () => {
         navigator.clipboard.writeText(url);
     });
+}
+
+function openInIframe(url) {
+    if (player) {
+        player.destroy();
+        player = null;
+    }
+
+    const iframeContainer = document.createElement('div');
+    iframeContainer.classList.add('iframe-container');
+
+    iframeCloseButton = document.createElement('button');
+    iframeCloseButton.classList.add('close-iframe');
+    iframeCloseButton.textContent = 'Close';
+    iframeCloseButton.addEventListener('click', () => {
+        hideIframe();
+    });
+
+    iframeContainer.appendChild(iframeCloseButton);
+
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.width = '100%';
+    iframe.height = 'calc(100% - 40px)'; // Adjust the height to leave space for the close button
+    iframe.frameborder = '0';
+    iframe.allowFullscreen = true;
+
+    iframeContainer.appendChild(iframe);
+
+    const playerContainer = document.getElementById('video-player-container');
+    playerContainer.appendChild(iframeContainer);
+
+    iframePlayer = iframe;
+}
+
+function hideIframe() {
+    if (iframePlayer) {
+        iframePlayer.remove();
+        iframePlayer = null;
+    }
+
+    if (iframeCloseButton) {
+        iframeCloseButton.remove();
+        iframeCloseButton = null;
+    }
 }
 
 function closePlayer() {
@@ -142,5 +204,6 @@ function closePlayer() {
         player.destroy();
         player = null;
     }
+    hideIframe();
     document.getElementById('player').innerHTML = '';
 }
