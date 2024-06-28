@@ -125,6 +125,10 @@ function playChannel(url) {
     if (iframePlayer) {
         iframePlayer.remove();
         iframePlayer = null;
+        if (iframeCloseButton) {
+            iframeCloseButton.remove();
+            iframeCloseButton = null;
+        }
     }
 
     playerContainer.classList.remove('hidden');
@@ -137,7 +141,7 @@ function playChannel(url) {
         autoPlay: true
     });
 
-    player.on(Clappr.Events.PLAYER_ERROR, () => {
+    player.on(Clappr.Events.PLAYER_ERROR, (error) => {
         // Clappr couldn't play the video, open it in an iframe
         openInIframe(url);
     });
