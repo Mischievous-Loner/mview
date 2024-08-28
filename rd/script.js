@@ -1,3 +1,9 @@
+// Constants for IndexedDB
+const DB_NAME = "RadioStationsDB";
+const DB_VERSION = 1;
+const STORE_NAME = "stations";
+
+// DOM elements
 const browseRadioButton = document.getElementById('browse-radio');
 const radioControlsDiv = document.getElementById('radio-controls');
 const radioStationsSelect = document.getElementById('radio-stations');
@@ -16,47 +22,91 @@ const favoritesDiv = document.getElementById('favorites');
 let stations = [];
 let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
 
-// Debounce function
-function debounce(func, delay) {
-    let timeout;
-    return function (...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), delay);
-    };
+// Open or create an IndexedDB database
+function openDatabase() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: "url" });
+            }
+        };
+
+        request.onsuccess = (event) => {
+            resolve(event.target.result);
+        };
+
+        request.onerror = (event) => {
+            reject("Database error: " + event.target.errorCode);
+        };
+    });
+}
+
+// Store fetched data in IndexedDB
+async function storeStationsInDB(stations) {
+    const db = await openDatabase();
+    const transaction = db.transaction(STORE_NAME, "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+
+    stations.forEach(station => store.put(station));
+
+    return new Promise((resolve, reject) => {
+        transaction.oncomplete = () => resolve(true);
+        transaction.onerror = () => reject(transaction.error);
+    });
+}
+
+// Retrieve stations from IndexedDB
+async function getStationsFromDB() {
+    const db = await openDatabase();
+    const transaction = db.transaction(STORE_NAME, "readonly");
+    const store = transaction.objectStore(STORE_NAME);
+
+    return new Promise((resolve, reject) => {
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
 }
 
 // Fetch radio stations
 async function fetchRadioStations() {
     loadingDiv.classList.remove('hidden');
-    
-    // Check if we have cached data
-    const cachedData = JSON.parse(localStorage.getItem('radioStations'));
-    const cacheTimestamp = localStorage.getItem('cacheTimestamp');
-    const now = new Date().getTime();
-    const threeDaysInMillis = 3 * 24 * 60 * 60 * 1000; // 3 days in milliseconds
 
-    // If cached data exists and is less than 3 days old, use it
-    if (cachedData && cacheTimestamp && (now - cacheTimestamp < threeDaysInMillis)) {
-        stations = cachedData;
-        console.log('Loaded stations from cache:', stations);
-        populateStationSelect(stations);
-        loadingDiv.classList.add('hidden');
-        return;
+    // Try to load stations from IndexedDB
+    try {
+        stations = await getStationsFromDB();
+        if (stations.length > 0) {
+            console.log('Loaded stations from IndexedDB:', stations);
+            populateStationSelect(stations);
+            loadingDiv.classList.add('hidden');
+            return;
+        }
+    } catch (error) {
+        console.error('Error loading stations from IndexedDB:', error);
     }
 
-    // If no valid cache, fetch fresh data
+    // If no cached data, fetch fresh data from the API
     try {
         const response = await fetch('https://de1.api.radio-browser.info/json/stations');
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
-        stations = await response.json();
-        console.log('Fetched stations:', stations);
-        
-        // Cache the fetched data and the current timestamp
-        localStorage.setItem('radioStations', JSON.stringify(stations));
-        localStorage.setItem('cacheTimestamp', now.toString());
-        
+        const fetchedStations = await response.json();
+        console.log('Fetched stations:', fetchedStations);
+
+        // Reduce the data to only the required fields
+        stations = fetchedStations.map(station => ({
+            name: station.name,
+            url: station.url,
+            favicon: station.favicon
+        }));
+
+        // Store the fetched data in IndexedDB
+        await storeStationsInDB(stations);
+
         populateStationSelect(stations);
     } catch (error) {
         console.error('Error fetching stations:', error);
@@ -66,7 +116,7 @@ async function fetchRadioStations() {
     }
 }
 
-// Populate station select
+// Populate station select dropdown
 function populateStationSelect(stations) {
     radioStationsSelect.innerHTML = '';
     stations.forEach(station => {
@@ -142,8 +192,19 @@ function displayFavorites() {
     });
 }
 
-// Search functionality with debouncing
-const debouncedSearch = debounce(() => {
+// Debounced search functionality
+function debounce(func, delay) {
+    let debounceTimer;
+    return function () {
+        const context = this;
+        const args = arguments;
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => func.apply(context, args), delay);
+    };
+}
+
+// Search functionality
+searchInput.addEventListener('input', debounce(() => {
     const query = searchInput.value.toLowerCase().trim();
     const queryWords = query.split(/\s+/); // Split query into words
 
@@ -153,9 +214,7 @@ const debouncedSearch = debounce(() => {
     });
 
     populateStationSelect(filteredStations);
-}, 300); // 300ms delay
-
-searchInput.addEventListener('input', debouncedSearch);
+}, 300));
 
 // Show radio controls on "Browse Radio" button click
 browseRadioButton.addEventListener('click', () => {
