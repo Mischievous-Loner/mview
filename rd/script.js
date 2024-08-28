@@ -16,6 +16,15 @@ const favoritesDiv = document.getElementById('favorites');
 let stations = [];
 let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
 
+// Debounce function
+function debounce(func, delay) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
 // Fetch radio stations
 async function fetchRadioStations() {
     loadingDiv.classList.remove('hidden');
@@ -46,7 +55,7 @@ async function fetchRadioStations() {
         
         // Cache the fetched data and the current timestamp
         localStorage.setItem('radioStations', JSON.stringify(stations));
-        localStorage.setItem('cacheTimestamp', now);
+        localStorage.setItem('cacheTimestamp', now.toString());
         
         populateStationSelect(stations);
     } catch (error) {
@@ -133,8 +142,8 @@ function displayFavorites() {
     });
 }
 
-// Search functionality
-searchInput.addEventListener('input', () => {
+// Search functionality with debouncing
+const debouncedSearch = debounce(() => {
     const query = searchInput.value.toLowerCase().trim();
     const queryWords = query.split(/\s+/); // Split query into words
 
@@ -144,7 +153,9 @@ searchInput.addEventListener('input', () => {
     });
 
     populateStationSelect(filteredStations);
-});
+}, 300); // 300ms delay
+
+searchInput.addEventListener('input', debouncedSearch);
 
 // Show radio controls on "Browse Radio" button click
 browseRadioButton.addEventListener('click', () => {
