@@ -119,22 +119,11 @@ function populateStationSelect(stations) {
 
 // Play selected station
 function playStation(url, name, image) {
-    const proxyBase = 'https://pprrooxxyy.vercel.app/';
-    let proxyUrl;
-
-    if (url.startsWith('http://')) {
-        proxyUrl = proxyBase + 'http/' + url.slice(7);
-    } else if (url.startsWith('https://')) {
-        proxyUrl = proxyBase + 'https/' + url.slice(8);
-    } else {
-        proxyUrl = url; // Fallback to original URL if it doesn't match
-    }
-
-    audioPlayer.src = proxyUrl; // Set the audio player source to the proxy URL
+    audioPlayer.src = url;
     audioPlayer.play();
     nowPlayingStation.textContent = `Station: ${name}`;
     nowPlayingSong.textContent = `Song: Loading...`;
-    nowPlayingUrl.textContent = `URL: ${proxyUrl}`;
+    nowPlayingUrl.textContent = `URL: ${url}`;
     nowPlayingImage.src = image || 'https://via.placeholder.com/50';
 }
 
@@ -151,14 +140,10 @@ favoriteButton.addEventListener('click', () => {
     const selectedStation = radioStationsSelect.value;
     const stationName = radioStationsSelect.options[radioStationsSelect.selectedIndex].text;
     const stationImage = stations.find(station => station.url === selectedStation)?.favicon || '';
-    
-    // Check if the station is already in favorites
     if (!favorites.some(fav => fav.url === selectedStation)) {
         favorites.push({ url: selectedStation, name: stationName, image: stationImage });
         localStorage.setItem('favorites', JSON.stringify(favorites));
         displayFavorites();
-    } else {
-        alert('This station is already in your favorites.');
     }
 });
 
@@ -180,12 +165,10 @@ function displayFavorites() {
             <span>${favorite.name}</span>
             <button class="remove-favorite" onclick="removeFavorite('${favorite.url}')">❌</button>
         `;
-
         // Add click event to play the favorite station
         favoriteItem.addEventListener('click', () => {
             playStation(favorite.url, favorite.name, favorite.image);
         });
-
         favoritesDiv.appendChild(favoriteItem);
     });
 }
