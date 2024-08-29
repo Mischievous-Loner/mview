@@ -145,12 +145,13 @@ function getProxiedUrl(url) {
 // Play selected station
 function playStation(url, name, image) {
     const proxiedUrl = getProxiedUrl(url);
-    audioPlayer.src = proxiedUrl;  // Ensure proxy URL is used
+    const proxiedImageUrl = getProxiedUrl(image);
+    audioPlayer.src = proxiedUrl;  // Ensure proxy URL is used for audio
     audioPlayer.play();
     nowPlayingStation.textContent = `Station: ${name}`;
     nowPlayingSong.textContent = `Song: Loading...`;
     nowPlayingUrl.textContent = `URL: ${proxiedUrl}`;
-    nowPlayingImage.src = image || 'https://via.placeholder.com/50';
+    nowPlayingImage.src = proxiedImageUrl || 'https://via.placeholder.com/50'; // Ensure proxy URL is used for images
 }
 
 // Play selected station from dropdown
@@ -189,7 +190,7 @@ function displayFavorites() {
         favoriteItem.className = 'favorite-item';
 
         const stationImage = document.createElement('img');
-        stationImage.src = station.image || 'https://via.placeholder.com/50';
+        stationImage.src = getProxiedUrl(station.image) || 'https://via.placeholder.com/50'; // Use proxy for images
 
         const stationName = document.createElement('span');
         stationName.textContent = station.name;
