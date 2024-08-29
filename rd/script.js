@@ -2,6 +2,7 @@
 const DB_NAME = "RadioStationsDB";
 const DB_VERSION = 1;
 const STORE_NAME = "stations";
+const PROXY_URL = "https://pprrooxxyy.vercel.app"; // Proxy base URL
 
 // DOM elements
 const browseRadioButton = document.getElementById('browse-radio');
@@ -26,15 +27,18 @@ let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
 function openDatabase() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
+
         request.onupgradeneeded = (event) => {
             const db = event.target.result;
             if (!db.objectStoreNames.contains(STORE_NAME)) {
                 db.createObjectStore(STORE_NAME, { keyPath: "url" });
             }
         };
+
         request.onsuccess = (event) => {
             resolve(event.target.result);
         };
+
         request.onerror = (event) => {
             reject("Database error: " + event.target.errorCode);
         };
@@ -46,7 +50,9 @@ async function storeStationsInDB(stations) {
     const db = await openDatabase();
     const transaction = db.transaction(STORE_NAME, "readwrite");
     const store = transaction.objectStore(STORE_NAME);
+
     stations.forEach(station => store.put(station));
+
     return new Promise((resolve, reject) => {
         transaction.oncomplete = () => resolve(true);
         transaction.onerror = () => reject(transaction.error);
@@ -58,6 +64,7 @@ async function getStationsFromDB() {
     const db = await openDatabase();
     const transaction = db.transaction(STORE_NAME, "readonly");
     const store = transaction.objectStore(STORE_NAME);
+
     return new Promise((resolve, reject) => {
         const request = store.getAll();
         request.onsuccess = () => resolve(request.result);
@@ -68,6 +75,7 @@ async function getStationsFromDB() {
 // Fetch radio stations
 async function fetchRadioStations() {
     loadingDiv.classList.remove('hidden');
+
     // Try to load stations from IndexedDB
     try {
         stations = await getStationsFromDB();
@@ -89,14 +97,17 @@ async function fetchRadioStations() {
         }
         const fetchedStations = await response.json();
         console.log('Fetched stations:', fetchedStations);
+
         // Reduce the data to only the required fields
         stations = fetchedStations.map(station => ({
             name: station.name,
             url: station.url,
             favicon: station.favicon
         }));
+
         // Store the fetched data in IndexedDB
         await storeStationsInDB(stations);
+
         populateStationSelect(stations);
     } catch (error) {
         console.error('Error fetching stations:', error);
@@ -117,13 +128,24 @@ function populateStationSelect(stations) {
     });
 }
 
+// Modify URL to stream through proxy
+function getProxiedUrl(url) {
+    if (url.startsWith('http://')) {
+        return `${PROXY_URL}/http/${url.substring(7)}`;
+    } else if (url.startsWith('https://')) {
+        return `${PROXY_URL}/https/${url.substring(8)}`;
+    }
+    return url; // Return original if not http or https
+}
+
 // Play selected station
 function playStation(url, name, image) {
-    audioPlayer.src = url;
+    const proxiedUrl = getProxiedUrl(url);
+    audioPlayer.src = proxiedUrl;
     audioPlayer.play();
     nowPlayingStation.textContent = `Station: ${name}`;
     nowPlayingSong.textContent = `Song: Loading...`;
-    nowPlayingUrl.textContent = `URL: ${url}`;
+    nowPlayingUrl.textContent = `URL: ${proxiedUrl}`;
     nowPlayingImage.src = image || 'https://via.placeholder.com/50';
 }
 
@@ -140,6 +162,7 @@ favoriteButton.addEventListener('click', () => {
     const selectedStation = radioStationsSelect.value;
     const stationName = radioStationsSelect.options[radioStationsSelect.selectedIndex].text;
     const stationImage = stations.find(station => station.url === selectedStation)?.favicon || '';
+
     if (!favorites.some(fav => fav.url === selectedStation)) {
         favorites.push({ url: selectedStation, name: stationName, image: stationImage });
         localStorage.setItem('favorites', JSON.stringify(favorites));
@@ -157,29 +180,59 @@ function removeFavorite(url) {
 // Display favorites
 function displayFavorites() {
     favoritesDiv.innerHTML = '<h2>Favorites</h2>';
-    favorites.forEach(favorite => {
+    favorites.forEach(station => {
         const favoriteItem = document.createElement('div');
         favoriteItem.className = 'favorite-item';
-        favoriteItem.innerHTML = `
-            <img src="${favorite.image || 'https://via.placeholder.com/50'}" alt="${favorite.name}" />
-            <span>${favorite.name}</span>
-            <button class="remove-favorite" onclick="removeFavorite('${favorite.url}')">❌</button>
-        `;
-        // Add click event to play the favorite station
-        favoriteItem.addEventListener('click', () => {
-            playStation(favorite.url, favorite.name, favorite.image);
-        });
+
+        const stationImage = document.createElement('img');
+        stationImage.src = station.image || 'https://via.placeholder.com/50';
+
+        const stationName = document.createElement('span');
+        stationName.textContent = station.name;
+
+        const removeButton = document.createElement('button');
+        removeButton.className = 'remove-favorite';
+        removeButton.textContent = '✖';
+        removeButton.onclick = () => removeFavorite(station.url);
+
+        favoriteItem.onclick = () => playStation(station.url, station.name, station.image);
+
+        favoriteItem.appendChild(stationImage);
+        favoriteItem.appendChild(stationName);
+        favoriteItem.appendChild(removeButton);
         favoritesDiv.appendChild(favoriteItem);
     });
 }
 
-// Initialize the application
+// Debounced search functionality
+function debounce(func, delay) {
+    let debounceTimer;
+    return function () {
+        const context = this;
+        const args = arguments;
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => func.apply(context, args), delay);
+    };
+}
+
+// Search functionality
+searchInput.addEventListener('input', debounce(() => {
+    const query = searchInput.value.toLowerCase().trim();
+    const queryWords = query.split(/\s+/); // Split query into words
+
+    const filteredStations = stations.filter(station => {
+        const stationName = station.name.toLowerCase();
+        return queryWords.every(word => stationName.includes(word)); // Check if all words are included
+    });
+
+    populateStationSelect(filteredStations);
+}, 300));
+
+// Show radio controls on "Browse Radio" button click
 browseRadioButton.addEventListener('click', () => {
-    radioControlsDiv.classList.toggle('hidden');
-    if (!stations.length) {
-        fetchRadioStations();
-    }
+    radioControlsDiv.classList.remove('hidden');
+    fetchRadioStations();
 });
 
-// Display favorites on load
+// Load favorites on page load
 displayFavorites();
