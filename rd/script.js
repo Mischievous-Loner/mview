@@ -151,10 +151,14 @@ favoriteButton.addEventListener('click', () => {
     const selectedStation = radioStationsSelect.value;
     const stationName = radioStationsSelect.options[radioStationsSelect.selectedIndex].text;
     const stationImage = stations.find(station => station.url === selectedStation)?.favicon || '';
+    
+    // Check if the station is already in favorites
     if (!favorites.some(fav => fav.url === selectedStation)) {
         favorites.push({ url: selectedStation, name: stationName, image: stationImage });
         localStorage.setItem('favorites', JSON.stringify(favorites));
         displayFavorites();
+    } else {
+        alert('This station is already in your favorites.');
     }
 });
 
@@ -194,4 +198,5 @@ browseRadioButton.addEventListener('click', () => {
     }
 });
 
+// Display favorites on load
 displayFavorites();
