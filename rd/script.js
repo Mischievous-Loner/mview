@@ -130,6 +130,8 @@ function populateStationSelect(stations) {
 
 // Modify URL to stream through proxy
 function getProxiedUrl(url) {
+    if (!url) return ''; // Handle invalid URLs gracefully
+
     let proxiedUrl;
     if (url.startsWith('http://')) {
         proxiedUrl = `${PROXY_URL}/http/${url.substring(7)}`;
@@ -138,6 +140,8 @@ function getProxiedUrl(url) {
     } else {
         proxiedUrl = url; // Return original if not http or https
     }
+
+    console.log('Original URL:', url);  // Debugging line
     console.log('Proxied URL:', proxiedUrl);  // Debugging line
     return proxiedUrl;
 }
@@ -145,13 +149,13 @@ function getProxiedUrl(url) {
 // Play selected station
 function playStation(url, name, image) {
     const proxiedUrl = getProxiedUrl(url);
-    const proxiedImageUrl = getProxiedUrl(image);
+    const proxiedImageUrl = image ? getProxiedUrl(image) : 'https://via.placeholder.com/50'; // Use proxy for images
     audioPlayer.src = proxiedUrl;  // Ensure proxy URL is used for audio
     audioPlayer.play();
     nowPlayingStation.textContent = `Station: ${name}`;
     nowPlayingSong.textContent = `Song: Loading...`;
     nowPlayingUrl.textContent = `URL: ${proxiedUrl}`;
-    nowPlayingImage.src = proxiedImageUrl || 'https://via.placeholder.com/50'; // Ensure proxy URL is used for images
+    nowPlayingImage.src = proxiedImageUrl; // Ensure proxy URL is used for images
 }
 
 // Play selected station from dropdown
@@ -190,7 +194,9 @@ function displayFavorites() {
         favoriteItem.className = 'favorite-item';
 
         const stationImage = document.createElement('img');
-        stationImage.src = getProxiedUrl(station.image) || 'https://via.placeholder.com/50'; // Use proxy for images
+        const proxiedImageUrl = station.image ? getProxiedUrl(station.image) : 'https://via.placeholder.com/50';
+        stationImage.src = proxiedImageUrl; // Use proxy for images
+        stationImage.onerror = () => stationImage.src = 'https://via.placeholder.com/50'; // Fallback if proxy fails
 
         const stationName = document.createElement('span');
         stationName.textContent = station.name;
