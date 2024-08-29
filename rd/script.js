@@ -130,18 +130,22 @@ function populateStationSelect(stations) {
 
 // Modify URL to stream through proxy
 function getProxiedUrl(url) {
+    let proxiedUrl;
     if (url.startsWith('http://')) {
-        return `${PROXY_URL}/http/${url.substring(7)}`;
+        proxiedUrl = `${PROXY_URL}/http/${url.substring(7)}`;
     } else if (url.startsWith('https://')) {
-        return `${PROXY_URL}/https/${url.substring(8)}`;
+        proxiedUrl = `${PROXY_URL}/https/${url.substring(8)}`;
+    } else {
+        proxiedUrl = url; // Return original if not http or https
     }
-    return url; // Return original if not http or https
+    console.log('Proxied URL:', proxiedUrl);  // Debugging line
+    return proxiedUrl;
 }
 
 // Play selected station
 function playStation(url, name, image) {
     const proxiedUrl = getProxiedUrl(url);
-    audioPlayer.src = proxiedUrl;
+    audioPlayer.src = proxiedUrl;  // Ensure proxy URL is used
     audioPlayer.play();
     nowPlayingStation.textContent = `Station: ${name}`;
     nowPlayingSong.textContent = `Song: Loading...`;
