@@ -176,6 +176,12 @@ function displayFavorites() {
             <span>${favorite.name}</span>
             <button class="remove-favorite" onclick="removeFavorite('${favorite.url}')">❌</button>
         `;
+
+        // Add click event to play the favorite station
+        favoriteItem.addEventListener('click', () => {
+            playStation(favorite.url, favorite.name, favorite.image);
+        });
+
         favoritesDiv.appendChild(favoriteItem);
     });
 }
