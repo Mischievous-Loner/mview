@@ -102,7 +102,10 @@ async function fetchRadioStations() {
         stations = fetchedStations.map(station => ({
             name: station.name,
             url: station.url,
-            favicon: station.favicon
+            favicon: station.favicon,
+            country: station.country,
+            language: station.language,
+            votes: station.votes
         }));
 
         // Store the fetched data in IndexedDB
