@@ -19,6 +19,9 @@ const nowPlayingUrl = document.getElementById('now-playing-url');
 const searchInput = document.getElementById('search');
 const loadingDiv = document.getElementById('loading');
 const favoritesDiv = document.getElementById('favorites');
+const countryFilter = document.getElementById('country-filter');
+const languageFilter = document.getElementById('language-filter');
+const sortOptions = document.getElementById('sort-options');
 
 let stations = [];
 let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
@@ -82,6 +85,7 @@ async function fetchRadioStations() {
         if (stations.length > 0) {
             console.log('Loaded stations from IndexedDB:', stations);
             populateStationSelect(stations);
+            populateFilters(stations); // Populate filters with fetched stations
             loadingDiv.classList.add('hidden');
             return;
         }
@@ -112,6 +116,7 @@ async function fetchRadioStations() {
         await storeStationsInDB(stations);
 
         populateStationSelect(stations);
+        populateFilters(stations); // Populate filters with fetched stations
     } catch (error) {
         console.error('Error fetching stations:', error);
         alert('Failed to load radio stations. Please try again later.');
@@ -130,6 +135,62 @@ function populateStationSelect(stations) {
         radioStationsSelect.appendChild(option);
     });
 }
+
+// Populate filter options for country and language
+function populateFilters(stations) {
+    const countries = [...new Set(stations.map(station => station.country))].sort(); // Sort countries A-Z
+    const languages = [...new Set(stations.map(station => station.language))].sort(); // Sort languages A-Z
+
+    countries.forEach(country => {
+        const option = document.createElement('option');
+        option.value = country;
+        option.textContent = country;
+        countryFilter.appendChild(option);
+    });
+
+    languages.forEach(language => {
+        const option = document.createElement('option');
+        option.value = language;
+        option.textContent = language;
+        languageFilter.appendChild(option);
+    });
+}
+
+// Filter and sort stations based on user selection
+function filterAndSortStations() {
+    let filteredStations = [...stations];
+
+    // Filter by country
+    const selectedCountry = countryFilter.value;
+    if (selectedCountry) {
+        filteredStations = filteredStations.filter(station => station.country === selectedCountry);
+    }
+
+    // Filter by language
+    const selectedLanguage = languageFilter.value;
+    if (selectedLanguage) {
+        filteredStations = filteredStations.filter(station => station.language === selectedLanguage);
+    }
+
+    // Sort stations
+    const sortValue = sortOptions.value;
+    if (sortValue === "az") {
+        filteredStations.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortValue === "za") {
+        filteredStations.sort((a, b) => b.name.localeCompare(a.name));
+    } else if (sortValue === "popularity-asc") {
+        filteredStations.sort((a, b) => a.votes - b.votes);
+    } else if (sortValue === "popularity-desc") {
+        filteredStations.sort((a, b) => b.votes - a.votes);
+    }
+
+    populateStationSelect(filteredStations);
+}
+
+// Event listeners for filters and sort options
+countryFilter.addEventListener('change', filterAndSortStations);
+languageFilter.addEventListener('change', filterAndSortStations);
+sortOptions.addEventListener('change', filterAndSortStations);
 
 // Modify URL to stream through proxy
 function getProxiedUrl(url) {
