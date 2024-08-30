@@ -188,13 +188,13 @@ button:hover {
 
     text-align: left;
 
+    font-weight: bold;
+
 }
 
 #favorites h2 {
 
     color: #ff6f61;
-    
-    font-weight: bold;
 
 }
 
@@ -215,8 +215,6 @@ button:hover {
     border-radius: 5px;
 
     color: #333;
-
-    font-weight: bold;
 
 }
 
