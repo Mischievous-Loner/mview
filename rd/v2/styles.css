@@ -232,9 +232,9 @@ button:hover {
 
     background: transparent;
 
-    border: none;
+    border: #000000 2px;
 
-    color: #ff6f61;
+    color: #050b2d;
 
     cursor: pointer;
 
