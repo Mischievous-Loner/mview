@@ -193,6 +193,8 @@ button:hover {
 #favorites h2 {
 
     color: #ff6f61;
+    
+    font-weight: underline;
 
 }
 
@@ -213,6 +215,8 @@ button:hover {
     border-radius: 5px;
 
     color: #333;
+
+    font-weight: bold;
 
 }
 
