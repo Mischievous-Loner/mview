@@ -216,7 +216,7 @@ button:hover {
 
 }
 
-.favorite-item img {
+.favorite-item img , .remove-favorite {
 
     width: 50px;
 
