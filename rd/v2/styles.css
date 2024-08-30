@@ -232,7 +232,7 @@ button:hover {
 
     background: transparent;
 
-    border: #000000 dashed 2px;
+    border: 2px dashed #000000;
 
     color: #050b2d;
 
